@@ -1,6 +1,41 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Text.RegularExpressions;
 
+static string GetSqlConnection()
+{
+    var connectionString = "Server=127.0.0.1,2017;User Id=sa;Password=AMNDev@2017;TrustServerCertificate=True;Initial Catalog=ADM_SPAREPART_LIVE;Connection Timeout=3600;";
+    return connectionString;
+}
+
+static bool ExecuteSQL(string sql)
+{
+    var connectionString = GetSqlConnection();
+    using var sqlConnection = new SqlConnection(connectionString);
+    sqlConnection.Open();
+    using var command = new SqlCommand(sql, sqlConnection);
+    command.CommandTimeout = 3600;
+    var executionResult = command.ExecuteNonQuery();
+    return executionResult >= 0;
+}
+
+static int GetRowCount(string tableName)
+{
+    var connectionString = GetSqlConnection();
+    using var sqlConnection = new SqlConnection(connectionString);
+    sqlConnection.Open();
+    using var command = new SqlCommand($"SELECT COUNT(*) as counter FROM {tableName}", sqlConnection);
+    command.CommandTimeout = 3600;
+    var executionResult = command.ExecuteReader();
+    var dataTable = new System.Data.DataTable();
+    dataTable.Load(executionResult);
+    if (dataTable.Rows.Count > 0)
+    {
+        return Convert.ToInt32(dataTable.Rows[0][0]);
+    }
+
+    return 0;
+}
+
 var files = Directory.GetFiles(Path.Combine(Directory.GetCurrentDirectory(), "sql"), "*.sql", SearchOption.AllDirectories);
 var successFileDir = Path.Combine(Directory.GetCurrentDirectory(), "success");
 if (!Directory.Exists(successFileDir))
@@ -95,33 +130,4 @@ while (files.Count() > 0)
     }
 
     Console.WriteLine($"Execution completed.");
-}
-
-static bool ExecuteSQL(string sql)
-{
-    var connectionString = "Server=127.0.0.1,2017;User Id=sa;Password=AMNDev@2017;TrustServerCertificate=True;Initial Catalog=ADM_SPAREPART_LIVE;Connection Timeout=3600;";
-    using var sqlConnection = new SqlConnection(connectionString);
-    sqlConnection.Open();
-    using var command = new SqlCommand(sql, sqlConnection);
-    command.CommandTimeout = 3600;
-    var executionResult = command.ExecuteNonQuery();
-    return executionResult >= 0;
-}
-
-static int GetRowCount(string tableName)
-{
-    var connectionString = "Server=127.0.0.1,2017;User Id=sa;Password=AMNDev@2017;TrustServerCertificate=True;Initial Catalog=ADM_SPAREPART_LIVE;Connection Timeout=3600;";
-    using var sqlConnection = new SqlConnection(connectionString);
-    sqlConnection.Open();
-    using var command = new SqlCommand($"SELECT COUNT(*) as counter FROM {tableName}", sqlConnection);
-    command.CommandTimeout = 3600;
-    var executionResult = command.ExecuteReader();
-    var dataTable = new System.Data.DataTable();
-    dataTable.Load(executionResult);
-    if (dataTable.Rows.Count > 0)
-    {
-        return Convert.ToInt32(dataTable.Rows[0][0]);
-    }
-
-    return 0;
 }
